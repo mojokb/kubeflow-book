@@ -20,7 +20,7 @@ $ kubectl apply -f https://docs.projectcalico.org/v3.11/manifests/calico.yaml
 # 워커노드
 $ sudo kubeadm join 10.140.0.30:6443 --token gvqzq2.790jhot66r6214y7 --discovery-token-ca-cert-hash sha256:f51f7098225f661c09183e0da5af1de42eca51ff0d7aaad18af38d2b1ae15740
 
-# 만약 istio-dex 버전을 설치하신다면 kubernetes api server 설정에 몇가지를 추가해야 istio 인증이 정상적으로 작동합니다.
+# 만약 istio-dex 버전을 설치하신다면 kubernetes api server 설정에 몇가지를 추가해야 istio 인증이 정상적으로 작동합니다. (https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-token-volume-projection) 
 $ sudo vi /etc/kubernetes/manifests/kube-apiserver.yaml
 ...
 spec:
