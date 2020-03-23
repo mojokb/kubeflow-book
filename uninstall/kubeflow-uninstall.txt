@@ -1,0 +1,30 @@
+$ kfctl delete -f kfctl_istio-blah.yaml
+# 실행하면 namespace가 finalizer 때문에 Terminating 상태로 멈추어 있습니다.
+# 그래서 아래와 같이 finalizer를 해제 해주어야 합니다.
+
+$ kubectl proxy &
+$ NAMESPACE=kubeflow
+$ kubectl get namespace $NAMESPACE -o json |jq '.spec = {"finalizers":[]}' >temp.json
+$ curl -k -H "Content-Type: application/json" -X PUT --data-binary @temp.json 127.0.0.1:8001/api/v1/namespaces/$NAMESPACE/finalize
+
+# 그리고 그 외의 남아있는 리소스들을 처리해주어야 하는데요. 아래와 같이 순서대로 정리해 줍니다.
+# 진행하다보면 순서에 따라서 finalizer로 보호되어 있는 리소스들이 발생합니다. 
+# 그럴 경우 해당 리소스를 edit하여 finalizer의 값을 []로 바꾸어준 후 다시 실행시키면 됩니다 :>
+
+$ kubectl delete clusterroles        katib-controller katib-ui ml-pipeline-persistenceagent ml-pipeline-viewer-controller-role pipeline-runner
+$ kubectl delete clusterrolebindings katib-controller katib-ui ml-pipeline-persistenceagent ml-pipeline-scheduledworkflow ml-pipeline-viewer-crd-role-binding pipeline-runner
+$ kubectl delete admission-webhook-mutating-webhook-configuration experiment-mutating-webhook-config istio-sidecar-injector mutating-webhook-configuration
+
+$ for labels in app.kubernetes.io/part-of=kubeflow kustomize.component; do
+  kubectl api-resources --verbs=list -o name  | grep -v '^componentstatuses$' \
+    | xargs -n 1 kubectl delete --all-namespaces --ignore-not-found -l app.kubernetes.io/part-of=kubeflow
+done
+$ kubectl delete crd applications.app.k8s.io
+$ kubectl get configmap -o name -n kube-system | egrep 'cert-manager'|xargs kubectl delete -n kube-system
+
+$ kubectl get mutatingwebhookconfiguration -o name | egrep 'kubeflow|katib'|xargs kubectl delete
+
+# 만약 쿠브플로우를 설치하시면서 istio-system 도 같이 설치하셨다면 'kubeflow|dex|istio'로 변경
+$ kubectl get crd -o name| egrep 'kubeflow|dex|certmanager|cert-manager|applications.app.k8s.io'|xargs kubectl delete
+$ kubectl get clusterrole -o name| egrep 'kubeflow|dex'|xargs kubectl delete
+$ kubectl get clusterrolebinding -o name| egrep 'kubeflow|dex'|xargs kubectl delete

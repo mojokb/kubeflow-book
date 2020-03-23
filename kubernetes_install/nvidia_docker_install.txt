@@ -1,0 +1,27 @@
+$ release="ubuntu"$(lsb_release -sr | sed -e "s/\.//g")
+$ sudo apt install sudo gnupg
+$ sudo apt-key adv --fetch-keys "http://developer.download.nvidia.com/compute/cuda/repos/"$release"/x86_64/7fa2af80.pub"
+$ sudo sh -c 'echo "deb http://developer.download.nvidia.com/compute/cuda/repos/'$release'/x86_64 /" > /etc/apt/sources.list.d/nvidia-cuda.list'
+$ sudo sh -c 'echo "deb http://developer.download.nvidia.com/compute/machine-learning/repos/'$release'/x86_64 /" > /etc/apt/sources.list.d/nvidia-machine-learning.list'
+$ sudo apt update
+$ apt-cache search nvidia
+$ sudo apt-get install -y nvidia-XXX
+$ sudo apt-get install -y dkms nvidia-modprobe
+$ sudo reboot
+$ sudo cat /proc/driver/nvidia/version | nvidia-smi
+$ curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+$ distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+$ curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+$ sudo apt-get update
+$ sudo apt-get install –y nvidia-docker2 
+# daemon.json에 추가를 한다.
+$ sudo vi /etc/docker/daemon.json
+   "default-runtime": "nvidia",
+    "runtimes": {
+        "nvidia": {
+            "path": "/usr/bin/nvidia-container-runtime",
+            "runtimeArgs": []
+        }
+    }
+$ sudo systemctl resatrt docker
+$ sudo docker run --runtime=nvidia --rm nvidia/cuda nvidia-smi

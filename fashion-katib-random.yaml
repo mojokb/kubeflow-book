@@ -1,0 +1,63 @@
+apiVersion: "kubeflow.org/v1alpha3"
+kind: Experiment
+metadata:
+  namespace: kubeflow
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: fashion-mnist-experiment-3
+spec:
+  parallelTrialCount: 2  
+  maxTrialCount: 50
+  maxFailedTrialCount: 3
+  objective:
+    type: maximize
+    goal: 0.99  
+    objectiveMetricName: Validation-accuracy
+    additionalMetricNames:
+      - accuracy
+      - loss
+      - Validation-loss
+  algorithm:
+    algorithmName: random
+  trialTemplate:
+    goTemplate:
+        rawTemplate: |-
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: {{.Trial}}
+            namespace: {{.NameSpace}}
+          spec:
+            template:
+              spec:
+                containers:
+                - name: {{.Trial}}
+                  image: kubeflow-registry.default.svc.cluster.local:30000/fairing-job:BBD4D7CE
+                  command:
+                  - "python"
+                  - "/app/fashion-mnist-katib.py" 
+                  {{- with .HyperParameters}}
+                  {{- range .}}
+                  - "{{.Name}}={{.Value}}"
+                  {{- end}}
+                  {{- end}}
+                  resources:
+                    limits:
+                      nvidia.com/gpu: 1
+                restartPolicy: Never
+  parameters:
+    - name: --learning_rate
+      parameterType: double
+      feasibleSpace:
+        min: "0.005"
+        max: "0.015"
+    - name: --dropout_rate
+      parameterType: double
+      feasibleSpace:
+        min: "0.1"
+        max: "0.9"
+    - name: --opt
+      parameterType: int
+      feasibleSpace:
+        min: "0"
+        max: "1" 

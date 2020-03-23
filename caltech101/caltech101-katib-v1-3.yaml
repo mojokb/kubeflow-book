@@ -1,0 +1,82 @@
+apiVersion: "kubeflow.org/v1alpha3"
+kind: Experiment
+metadata:
+  namespace: dudaji
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: caltech-2gpu-experiment-50trial-for90-v1-3
+spec:
+  parallelTrialCount: 1
+  maxTrialCount: 50
+  maxFailedTrialCount: 3
+  objective:
+    type: maximize
+    goal: 0.90  
+    objectiveMetricName: Validation-accuracy
+    additionalMetricNames:
+      - accuracy
+      - loss
+      - Validation-loss
+  algorithm:
+    algorithmName: random
+  trialTemplate:
+    goTemplate:
+        rawTemplate: |-
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: {{.Trial}}
+            namespace: {{.NameSpace}}
+          spec:
+            template:
+              spec:
+                containers:
+                - name: {{.Trial}}
+                  image: kubeflow-registry.default.svc.cluster.local:30000/caltech-katib-job:20DC789B
+                  command:
+                  - "python"
+                  - "/app/caltech101_for_katib.py" 
+                  {{- with .HyperParameters}}
+                  {{- range .}}
+                  - "{{.Name}}={{.Value}}"
+                  {{- end}}
+                  {{- end}}
+                  resources:
+                    request:
+                      nvidia.com/gpu: 2    
+                  volumeMounts:
+                    - mountPath: "/result"
+                      name: kubeflow-pvc-storage                     
+                restartPolicy: Never
+                volumes:
+                  - name: kubeflow-pvc-storage
+                    persistentVolumeClaim:
+                      claimName: caltech101 
+  parameters:
+    - name: --learning_rate
+      parameterType: double
+      feasibleSpace: # 0.0008226
+        min: "0.0005"
+        max: "0.0011"
+    - name: --dropout_rate
+      parameterType: double
+      feasibleSpace: # 0.21
+        min: "0.11"
+        max: "0.6"
+    - name: --batch_size
+      parameterType: int
+      feasibleSpace:
+        min: "13"
+        max: "16"      
+    - name: --epoch
+      parameterType: int
+      feasibleSpace:
+        min: "15"
+        max: "15"          
+    - name: --act
+      parameterType: categorical
+      feasibleSpace:
+        list: # relu, sigmoid, softmax, tanh
+        - "relu"
+        - "sigmoid" 
+        - "tanh"

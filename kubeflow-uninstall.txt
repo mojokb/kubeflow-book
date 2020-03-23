@@ -1,0 +1,10 @@
+for labels in app.kubernetes.io/part-of=kubeflow kustomize.component; do
+  kubectl api-resources --verbs=list -o name  | grep -v '^componentstatuses$' \
+    | xargs -n 1 kubectl delete --all-namespaces --ignore-not-found -l app.kubernetes.io/part-of=kubeflow
+done
+
+kubectl delete clusterroles        katib-controller katib-ui ml-pipeline-persistenceagent ml-pipeline-viewer-controller-role pipeline-runner
+kubectl delete clusterrolebindings katib-controller katib-ui ml-pipeline-persistenceagent ml-pipeline-scheduledworkflow ml-pipeline-viewer-crd-role-binding pipeline-runner
+kubectl delete admission-webhook-mutating-webhook-configuration experiment-mutating-webhook-config istio-sidecar-injector mutating-webhook-configuration
+
+kubectl get crd -o name| egrep 'kubeflow|dex'|xargs kubectl delete

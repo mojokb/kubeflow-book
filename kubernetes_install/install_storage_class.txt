@@ -1,0 +1,12 @@
+$ kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml
+$ curl https://raw.githubusercontent.com/helm/helm/master/scripts/get > get_helm.sh
+$ chmod 700 get_helm.sh
+$ ./get_helm.sh
+$ kubectl -n kube-system create sa tiller
+$ kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
+$ helm init --service-account tiller
+$ helm repo update
+
+# to install nfs-client-provisioner
+$ helm install --name my-release --set nfs.server=x.x.x.x --set nfs.path=/exported/path stable/nfs-client-provisioner
+$ kubectl patch storageclass nfs-client -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'

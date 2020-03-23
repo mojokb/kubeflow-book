@@ -1,0 +1,73 @@
+apiVersion: "kubeflow.org/v1alpha3"
+kind: Experiment
+metadata:
+  namespace: dudaji
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: fashion-mnist-cpu-experiment-v2-1
+spec:
+  parallelTrialCount: 5 
+  maxTrialCount: 50
+  maxFailedTrialCount: 3
+  objective:
+    type: maximize
+    goal: 0.99  
+    objectiveMetricName: Validation-accuracy
+    additionalMetricNames:
+      - accuracy
+      - loss
+      - Validation-loss
+  algorithm:
+    algorithmName: random
+  trialTemplate:
+    goTemplate:
+        rawTemplate: |-
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: {{.Trial}}
+            namespace: {{.NameSpace}}
+          spec:
+            template:
+              spec:
+                containers:
+                - name: {{.Trial}}
+                  image: kubeflow-registry.default.svc.cluster.local:30000/fairing-job:506FE0D9
+                  command:
+                  - "python"
+                  - "/app/fashion-mnist-katib.py" 
+                  {{- with .HyperParameters}}
+                  {{- range .}}
+                  - "{{.Name}}={{.Value}}"
+                  {{- end}}
+                  {{- end}}
+                restartPolicy: Never
+  parameters:
+    - name: --learning_rate
+      parameterType: double
+      feasibleSpace:
+        min: "0.0005"
+        max: "0.0015"
+    - name: --dropout_rate
+      parameterType: double
+      feasibleSpace:
+        min: "0.1"
+        max: "0.9"
+    - name: --layer
+      parameterType: int
+      feasibleSpace:
+        min: "1"
+        max: "5"        
+    - name: --epoch
+      parameterType: int
+      feasibleSpace:
+        min: "5"
+        max: "15"             
+    - name: --act
+      parameterType: categorical
+      feasibleSpace:
+        list: # relu, sigmoid, softmax, tanh
+        - "relu"
+        - "sigmoid" 
+        - "softmax"         
+        - "tanh"
