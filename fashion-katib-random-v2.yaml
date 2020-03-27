@@ -1,7 +1,7 @@
 apiVersion: "kubeflow.org/v1alpha3"
 kind: Experiment
 metadata:
-  namespace: dudaji
+  namespace: dudaji # 사용하는 namespace 명으로 바꾸어야합니다.
   labels:
     controller-tools.k8s.io: "1.0"
   name: fashion-mnist-cpu-experiment-v2-1
