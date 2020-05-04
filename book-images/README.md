@@ -7,7 +7,7 @@
 ### 2.2.2 코랩 설치
 
 - 36p  
-![image](https://drive.google.com/uc?export=view&id=16ppGlCkcP-wMcz-tvz8A2Csp0xXh1bFI)
+![image](http://kubeflow.zipsacoding.com/kubeflow/36p-1.png)
 
 ![image](http://kubeflow.zipsacoding.com/kubeflow/36p-2.png)
 -  37p  
